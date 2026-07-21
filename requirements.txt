@@ -1,0 +1,7 @@
+streamlit
+fastapi
+uvicorn
+ollama
+langchain
+langchain-community
+chromadb
