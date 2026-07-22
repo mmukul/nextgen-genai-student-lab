@@ -1,7 +1,13 @@
 import streamlit as st
 import requests
 
-API_URL = "http://localhost:8000"
+API_URL = "http://localhost:8000/chat"
+
+response = requests.post(
+    API_URL,
+    json={"prompt": prompt},
+    timeout=300
+)
 
 st.set_page_config(
     page_title="NextGen GenAI Student Lab",
