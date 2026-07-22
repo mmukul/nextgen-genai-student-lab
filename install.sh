@@ -6,7 +6,7 @@ echo "      NextGen GenAI Student Lab Installer"
 echo "===================================================="
 
 # --------------------------------------------------
-# Detect OS & Install Dependencies
+# Detect Operating System
 # --------------------------------------------------
 
 if command -v apt >/dev/null 2>&1; then
@@ -25,7 +25,7 @@ if command -v apt >/dev/null 2>&1; then
 
 elif command -v dnf >/dev/null 2>&1; then
 
-    echo "Fedora detected..."
+    echo "Fedora/RHEL/Rocky Linux detected..."
 
     sudo dnf upgrade -y
 
@@ -33,11 +33,12 @@ elif command -v dnf >/dev/null 2>&1; then
         python3 \
         python3-pip \
         curl \
-        git
+        git \
+        firewalld
 
 elif command -v yum >/dev/null 2>&1; then
 
-    echo "RHEL/CentOS detected..."
+    echo "CentOS detected..."
 
     sudo yum update -y
 
@@ -45,7 +46,8 @@ elif command -v yum >/dev/null 2>&1; then
         python3 \
         python3-pip \
         curl \
-        git
+        git \
+        firewalld
 
 else
 
@@ -62,37 +64,31 @@ fi
 echo
 echo "Configuring Firewall..."
 
-# Ubuntu/Debian (UFW)
-
-if command -v ufw >/dev/null 2>&1; then
-
-    sudo ufw allow 8000/tcp
-    sudo ufw allow 8501/tcp
-
-    echo "Opened ports:"
-    echo " 8000/tcp"
-    echo " 8501/tcp"
-
-fi
-
-# Fedora/RHEL/Rocky (firewalld)
-
 if command -v firewall-cmd >/dev/null 2>&1; then
 
-    sudo systemctl enable firewalld --now
+    echo "Starting firewalld..."
 
+    sudo systemctl enable firewalld
+    sudo systemctl start firewalld
+
+    echo "Opening TCP Port 8000 (FastAPI)..."
     sudo firewall-cmd --permanent --add-port=8000/tcp
+
+    echo "Opening TCP Port 8501 (Streamlit)..."
     sudo firewall-cmd --permanent --add-port=8501/tcp
+
+    echo "Reloading firewall..."
     sudo firewall-cmd --reload
 
-    echo "Opened ports:"
-    echo " 8000/tcp"
-    echo " 8501/tcp"
+    echo
+    echo "Firewall Rules"
+
+    sudo firewall-cmd --list-ports
 
 fi
 
 # --------------------------------------------------
-# Python Environment
+# Python Virtual Environment
 # --------------------------------------------------
 
 echo
@@ -122,7 +118,7 @@ if ! command -v ollama >/dev/null 2>&1; then
 fi
 
 echo
-echo "Downloading Model..."
+echo "Downloading AI Model..."
 
 ollama pull llama3.2:3b
 
