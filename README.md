@@ -1,3 +1,56 @@
-# NextGen GenAI Student Lab v0.4
+# NextGen GenAI Student Lab
 
-Combined starter repository for Phases 1-4.
+A beginner-friendly local AI lab built with:
+
+- Streamlit
+- FastAPI
+- Ollama
+- Llama 3.2
+
+## Installation
+
+```bash
+git clone https://github.com/your-org/genai-student-lab.git
+
+cd genai-student-lab
+
+chmod +x *.sh
+
+./install.sh
+```
+
+## Start
+
+```bash
+./start.sh
+```
+
+## Stop
+
+```bash
+./stop.sh
+```
+
+## Update
+
+```bash
+./update.sh
+```
+
+## Open
+
+http://localhost:8501
+
+## Features
+
+- AI Chat
+- Local LLM
+- One-click install
+- Beginner-friendly
+
+## Upcoming Features
+
+- Prompt Playground
+- Chat with PDF (RAG)
+- AI Agents
+- AI Security Labs
