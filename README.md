@@ -10,7 +10,7 @@ A beginner-friendly local AI lab built with:
 ## Installation
 
 ```bash
-git clone https://github.com/your-org/genai-student-lab.git
+git clone https://github.com/mmukul/genai-student-lab.git
 
 cd genai-student-lab
 
