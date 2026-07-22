@@ -21,7 +21,8 @@ if command -v apt >/dev/null 2>&1; then
         python3-venv \
         python3-pip \
         curl \
-        git
+        git \
+        zstd
 
 elif command -v dnf >/dev/null 2>&1; then
 
@@ -34,7 +35,8 @@ elif command -v dnf >/dev/null 2>&1; then
         python3-pip \
         curl \
         git \
-        firewalld
+        firewalld \
+        zstd
 
 elif command -v yum >/dev/null 2>&1; then
 
@@ -47,7 +49,8 @@ elif command -v yum >/dev/null 2>&1; then
         python3-pip \
         curl \
         git \
-        firewalld
+        firewalld \
+        zstd
 
 else
 
