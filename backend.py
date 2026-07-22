@@ -81,13 +81,13 @@ def models():
 
 @app.post("/chat")
 def chat(request: ChatRequest):
-    """
-    Send prompt to Ollama.
-    """
+
+    print("Prompt:", request.prompt)
 
     try:
-
         response = generate_response(request.prompt)
+
+        print("Response:", response)
 
         return {
             "success": True,
@@ -95,6 +95,7 @@ def chat(request: ChatRequest):
         }
 
     except Exception as ex:
+        print("ERROR:", ex)
 
         return {
             "success": False,
