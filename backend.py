@@ -1,87 +1,120 @@
+"""
+NextGen GenAI Student Lab
+FastAPI Backend
+Version: 0.1
+"""
+
 from fastapi import FastAPI
 from pydantic import BaseModel
-import requests
-import os
+from fastapi.middleware.cors import CORSMiddleware
+
+from config import APP_NAME, VERSION
+from utils import (
+    create_directories,
+    get_system_health,
+    generate_response,
+    list_models
+)
+
+# ----------------------------------------------------
+# Initialization
+# ----------------------------------------------------
+
+create_directories()
 
 app = FastAPI(
-    title="NextGen GenAI Student Lab",
-    version="0.1"
+    title=APP_NAME,
+    version=VERSION,
+    description="FastAPI Backend for NextGen GenAI Student Lab"
 )
 
-OLLAMA_URL = os.getenv(
-    "OLLAMA_URL",
-    "http://localhost:11434/api/generate"
+# ----------------------------------------------------
+# CORS
+# ----------------------------------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-MODEL = os.getenv(
-    "MODEL_NAME",
-    "llama3.2:3b"
-)
-
+# ----------------------------------------------------
+# Request Models
+# ----------------------------------------------------
 
 class ChatRequest(BaseModel):
     prompt: str
 
 
+# ----------------------------------------------------
+# Routes
+# ----------------------------------------------------
+
 @app.get("/")
 def home():
     return {
-        "application": "NextGen GenAI Student Lab",
+        "application": APP_NAME,
+        "version": VERSION,
         "status": "Running"
     }
 
 
 @app.get("/health")
 def health():
+    """
+    Returns application health.
+    """
+    return get_system_health()
 
-    try:
 
-        response = requests.get(
-            "http://localhost:11434/api/tags",
-            timeout=5
-        )
-
-        if response.status_code == 200:
-
-            return {
-                "backend": "Running",
-                "ollama": "Connected"
-            }
-
-    except Exception:
-
-        return {
-            "backend": "Running",
-            "ollama": "Not Running"
-        }
+@app.get("/models")
+def models():
+    """
+    Returns installed Ollama models.
+    """
+    return {
+        "models": list_models()
+    }
 
 
 @app.post("/chat")
 def chat(request: ChatRequest):
-
-    payload = {
-        "model": MODEL,
-        "prompt": request.prompt,
-        "stream": False
-    }
+    """
+    Send prompt to Ollama.
+    """
 
     try:
 
-        response = requests.post(
-            OLLAMA_URL,
-            json=payload,
-            timeout=300
-        )
-
-        data = response.json()
+        response = generate_response(request.prompt)
 
         return {
-            "response": data.get("response", "")
+            "success": True,
+            "response": response
         }
 
     except Exception as ex:
 
         return {
+            "success": False,
             "response": "",
             "error": str(ex)
         }
+
+
+# ----------------------------------------------------
+# Run Directly
+# ----------------------------------------------------
+
+if __name__ == "__main__":
+
+    import uvicorn
+    from config import API_HOST, API_PORT
+
+    uvicorn.run(
+        "backend:app",
+        host=API_HOST,
+        port=API_PORT,
+        reload=True
+    )
