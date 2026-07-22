@@ -12,9 +12,9 @@ A lightweight local GenAI platform built with:
 # Installation
 
 ```bash
-git clone https://github.com/<username>/genai-student-lab.git
+git clone https://github.com/mmukul/nextgen-genai-student-lab.git
 
-cd genai-student-lab
+cd nextgen-genai-student-lab
 
 chmod +x *.sh
 
