@@ -4,20 +4,33 @@ FastAPI Backend
 Version: 0.1
 """
 
-from fastapi import FastAPI
-from pydantic import BaseModel
+import logging
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 from config import APP_NAME, VERSION
 from utils import (
     create_directories,
-    get_system_health,
     generate_response,
-    list_models
+    get_system_health,
+    list_models,
 )
 
 # ----------------------------------------------------
-# Initialization
+# Logging
+# ----------------------------------------------------
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
+
+logger = logging.getLogger(__name__)
+
+# ----------------------------------------------------
+# Initialize
 # ----------------------------------------------------
 
 create_directories()
@@ -25,12 +38,8 @@ create_directories()
 app = FastAPI(
     title=APP_NAME,
     version=VERSION,
-    description="FastAPI Backend for NextGen GenAI Student Lab"
+    description="NextGen GenAI Student Lab API",
 )
-
-# ----------------------------------------------------
-# CORS
-# ----------------------------------------------------
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,12 +50,11 @@ app.add_middleware(
 )
 
 # ----------------------------------------------------
-# Request Models
+# Request Model
 # ----------------------------------------------------
 
 class ChatRequest(BaseModel):
     prompt: str
-
 
 # ----------------------------------------------------
 # Routes
@@ -57,65 +65,55 @@ def home():
     return {
         "application": APP_NAME,
         "version": VERSION,
-        "status": "Running"
+        "status": "Running",
     }
 
 
 @app.get("/health")
 def health():
-    """
-    Returns application health.
-    """
     return get_system_health()
 
 
 @app.get("/models")
 def models():
-    """
-    Returns installed Ollama models.
-    """
     return {
-        "models": list_models()
+        "success": True,
+        "models": list_models(),
     }
 
 
 @app.post("/chat")
 def chat(request: ChatRequest):
+    """
+    Generate response using Ollama.
+    """
 
-    print("Prompt:", request.prompt)
+    prompt = request.prompt.strip()
+
+    if not prompt:
+        raise HTTPException(
+            status_code=400,
+            detail="Prompt cannot be empty.",
+        )
+
+    logger.info("Prompt: %s", prompt)
 
     try:
-        response = generate_response(request.prompt)
 
-        print("Response:", response)
+        response = generate_response(prompt)
+
+        logger.info("Response generated successfully.")
 
         return {
             "success": True,
-            "response": response
+            "response": response,
         }
 
     except Exception as ex:
-        print("ERROR:", ex)
 
-        return {
-            "success": False,
-            "response": "",
-            "error": str(ex)
-        }
+        logger.exception("Chat generation failed")
 
-
-# ----------------------------------------------------
-# Run Directly
-# ----------------------------------------------------
-
-if __name__ == "__main__":
-
-    import uvicorn
-    from config import API_HOST, API_PORT
-
-    uvicorn.run(
-        "backend:app",
-        host=API_HOST,
-        port=API_PORT,
-        reload=True
-    )
+        raise HTTPException(
+            status_code=500,
+            detail=str(ex),
+        )
