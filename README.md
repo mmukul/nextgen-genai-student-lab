@@ -40,7 +40,7 @@ The goal of this project is to provide an easy-to-install environment for studen
 ```
 genai-student-lab/
 │
-├── install.sh
+├── setup.sh
 ├── start.sh
 ├── stop.sh
 ├── update.sh
@@ -98,7 +98,7 @@ chmod +x *.sh
 Run installation.
 
 ```bash
-./install.sh
+./setup.sh
 ```
 
 The installer performs the following tasks automatically:
