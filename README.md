@@ -1,6 +1,6 @@
 # NextGen GenAI Student Lab
 
-A lightweight GenAI learning platform built using:
+A lightweight local GenAI platform built with:
 
 - Streamlit
 - FastAPI
@@ -12,9 +12,9 @@ A lightweight GenAI learning platform built using:
 # Installation
 
 ```bash
-git clone https://github.com/mmukul/nextgen-genai-student-lab.git
+git clone https://github.com/<username>/genai-student-lab.git
 
-cd nextgen-genai-student-lab
+cd genai-student-lab
 
 chmod +x *.sh
 
@@ -23,35 +23,67 @@ chmod +x *.sh
 
 ---
 
-# Installer Performs
+# What the Installer Does
 
-- Updates OS packages
-- Upgrades installed packages
+- Updates operating system packages
 - Installs Python
-- Installs pip
-- Installs curl
 - Installs Git
-- Configures firewall
-- Opens port **8000** (FastAPI)
-- Opens port **8501** (Streamlit)
-- Creates Python Virtual Environment
+- Installs curl
+- Creates a Python virtual environment
 - Installs Python dependencies
 - Installs Ollama
 - Downloads the Llama 3.2 model
-- Starts FastAPI
-- Starts Streamlit
+- Configures firewalld
+- Opens ports **8000** and **8501**
+- Starts the application
 
 ---
 
-# Access
+# Firewall Configuration (firewalld)
 
-## Local Machine
+The installer executes the following commands automatically:
+
+```bash
+sudo systemctl enable firewalld
+
+sudo systemctl start firewalld
+
+sudo firewall-cmd --permanent --add-port=8000/tcp
+
+sudo firewall-cmd --permanent --add-port=8501/tcp
+
+sudo firewall-cmd --reload
+
+sudo firewall-cmd --list-ports
+```
+
+Expected output:
+
+```
+8000/tcp 8501/tcp
+```
+
+---
+
+# Access the Application
+
+Local machine:
 
 ```
 http://localhost:8501
 ```
 
-## Another Computer on the Same Network
+From another computer on the same network:
+
+```
+http://<SERVER-IP>:8501
+```
+
+API Documentation:
+
+```
+http://<SERVER-IP>:8000/docs
+```
 
 Find the server IP:
 
@@ -68,28 +100,8 @@ Example:
 Open:
 
 ```
-UI
 http://192.168.1.100:8501
-
-API
-http://192.168.1.100:8000/docs
 ```
-
----
-
-# Firewall
-
-The installer automatically opens:
-
-| Port | Service |
-|------|----------|
-| 8000 | FastAPI |
-| 8501 | Streamlit |
-
-Supported firewall tools:
-
-- UFW (Ubuntu/Debian)
-- firewalld (Fedora/RHEL/Rocky/AlmaLinux)
 
 ---
 
@@ -109,4 +121,18 @@ Supported firewall tools:
 
 ```bash
 ./update.sh
+```
+
+---
+
+# Verify Firewall
+
+```bash
+sudo firewall-cmd --list-ports
+```
+
+Expected output:
+
+```
+8000/tcp 8501/tcp
 ```
