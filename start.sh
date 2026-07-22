@@ -8,24 +8,12 @@ if ! pgrep -x ollama >/dev/null; then
     nohup ollama serve >/tmp/ollama.log 2>&1 &
 fi
 
-echo "Waiting for Ollama..."
-
-until curl -s http://localhost:11434/api/tags >/dev/null; do
-    sleep 2
-done
-
 echo "Starting Backend..."
 
 nohup uvicorn backend:app \
     --host 0.0.0.0 \
     --port 8000 \
     >/tmp/genai-api.log 2>&1 &
-
-echo "Waiting for Backend..."
-
-until curl -s http://localhost:8000/health >/dev/null; do
-    sleep 2
-done
 
 echo "Starting Streamlit..."
 
