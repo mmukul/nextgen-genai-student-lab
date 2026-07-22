@@ -1,40 +1,102 @@
 #!/usr/bin/env bash
 set -e
 
-echo "======================================"
-echo " NextGen GenAI Student Lab Installer"
-echo "======================================"
+echo "===================================================="
+echo "      NextGen GenAI Student Lab Installer"
+echo "===================================================="
 
-# Detect package manager
+# --------------------------------------------------
+# Detect OS & Install Dependencies
+# --------------------------------------------------
+
 if command -v apt >/dev/null 2>&1; then
-    echo "Updating Ubuntu/Debian packages..."
+
+    echo "Ubuntu/Debian detected..."
+
     sudo apt update
     sudo apt upgrade -y
-    sudo apt install -y python3 python3-venv python3-pip curl git vim
+
+    sudo apt install -y \
+        python3 \
+        python3-venv \
+        python3-pip \
+        curl \
+        git
 
 elif command -v dnf >/dev/null 2>&1; then
-    echo "Updating Fedora packages..."
+
+    echo "Fedora detected..."
+
     sudo dnf upgrade -y
-    sudo dnf install -y python3 python3-pip curl git vim
+
+    sudo dnf install -y \
+        python3 \
+        python3-pip \
+        curl \
+        git
 
 elif command -v yum >/dev/null 2>&1; then
-    echo "Updating RHEL/CentOS packages..."
+
+    echo "RHEL/CentOS detected..."
+
     sudo yum update -y
-    sudo yum install -y python3 python3-pip curl git vim
+
+    sudo yum install -y \
+        python3 \
+        python3-pip \
+        curl \
+        git
 
 else
-    echo "Unsupported Linux distribution."
+
+    echo "Unsupported Linux Distribution"
+
     exit 1
+
 fi
 
-echo "Checking Python..."
+# --------------------------------------------------
+# Configure Firewall
+# --------------------------------------------------
 
-if ! command -v python3 >/dev/null 2>&1; then
-    echo "Python3 installation failed."
-    exit 1
+echo
+echo "Configuring Firewall..."
+
+# Ubuntu/Debian (UFW)
+
+if command -v ufw >/dev/null 2>&1; then
+
+    sudo ufw allow 8000/tcp
+    sudo ufw allow 8501/tcp
+
+    echo "Opened ports:"
+    echo " 8000/tcp"
+    echo " 8501/tcp"
+
 fi
 
-echo "Creating virtual environment..."
+# Fedora/RHEL/Rocky (firewalld)
+
+if command -v firewall-cmd >/dev/null 2>&1; then
+
+    sudo systemctl enable firewalld --now
+
+    sudo firewall-cmd --permanent --add-port=8000/tcp
+    sudo firewall-cmd --permanent --add-port=8501/tcp
+    sudo firewall-cmd --reload
+
+    echo "Opened ports:"
+    echo " 8000/tcp"
+    echo " 8501/tcp"
+
+fi
+
+# --------------------------------------------------
+# Python Environment
+# --------------------------------------------------
+
+echo
+echo "Creating Python Virtual Environment..."
 
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv
@@ -42,24 +104,32 @@ fi
 
 source .venv/bin/activate
 
-echo "Upgrading pip..."
 python -m pip install --upgrade pip
 
-echo "Installing Python packages..."
 pip install -r requirements.txt
 
+# --------------------------------------------------
+# Install Ollama
+# --------------------------------------------------
+
 if ! command -v ollama >/dev/null 2>&1; then
+
+    echo
     echo "Installing Ollama..."
+
     curl -fsSL https://ollama.com/install.sh | sh
+
 fi
 
-echo "Downloading AI model..."
+echo
+echo "Downloading Model..."
+
 ollama pull llama3.2:3b
 
-chmod +x start.sh stop.sh update.sh
+chmod +x *.sh
 
 echo
-echo "Installation completed successfully!"
+echo "Installation Completed Successfully"
 echo
 
 ./start.sh
