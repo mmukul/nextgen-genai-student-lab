@@ -84,9 +84,9 @@ genai-student-lab/
 Clone the repository.
 
 ```bash
-git clone https://github.com/<your-github-username>/genai-student-lab.git
+git clone https://github.com/mmukul/nextgen-genai-student-lab.git
 
-cd genai-student-lab
+cd nextgen-genai-student-lab
 ```
 
 Make scripts executable.
