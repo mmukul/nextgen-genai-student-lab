@@ -7,7 +7,7 @@ if ! command -v ollama >/dev/null 2>&1; then
     echo
     echo "Installing Ollama..."
 
-    curl -LO https://ollama.com/download/ollama-linux-amd64.tar.zst && file ollama-linux-amd64.tar.zst
+    curl -L https://ollama.com/download/ollama-linux-amd64.tar.zst | tar --zstd -xvf -
 
 fi
 
