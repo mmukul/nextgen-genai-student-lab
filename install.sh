@@ -41,3 +41,46 @@ echo
 echo "Downloading AI model..."
 
 ollama pull llama3.2:3b
+
+# --------------------------------------------------
+# Validate Installation
+# --------------------------------------------------
+
+echo
+echo "========================================="
+echo "Validating Installation..."
+echo "========================================="
+
+echo "Checking Python..."
+python3 --version
+
+echo "Checking Pip..."
+pip --version
+
+echo "Checking Ollama..."
+ollama --version
+
+echo "Checking Model..."
+
+if ollama list | grep -q "llama3.2:3b"; then
+    echo "✓ Model Installed"
+else
+    echo "✗ Model Missing"
+    exit 1
+fi
+
+echo "Checking Backend..."
+
+if curl -s http://localhost:8000/health >/dev/null; then
+    echo "✓ Backend Running"
+else
+    echo "✗ Backend Failed"
+fi
+
+echo "Checking Streamlit..."
+
+if curl -s http://localhost:8501 >/dev/null; then
+    echo "✓ Streamlit Running"
+else
+    echo "✗ Streamlit Failed"
+fi
