@@ -10,10 +10,10 @@ echo
 
 # Install Python dependencies
 if command -v dnf >/dev/null 2>&1; then
-    sudo dnf install -y curl git python3 python3-pip zstd
+    sudo dnf install -y curl git python3 python3-pip zstd wget vim
 elif command -v apt >/dev/null 2>&1; then
     sudo apt update
-    sudo apt install -y curl git python3 python3-pip zstd
+    sudo apt install -y curl git python3 python3-pip zstd wget vim
 fi
 
 # Install Python packages
@@ -22,8 +22,9 @@ pip3 install -r requirements.txt
 # Install Ollama if missing
 if ! command -v ollama >/dev/null 2>&1; then
     echo "Installing Ollama..."
-    sudo wget -qO- https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst | sudo tar --zstd -xf - -C /usr/local
-fi
+    wget --show-progress -O- \
+https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst \
+| sudo tar --zstd -xf - -C /usr/local
 
 echo
 echo "Ollama Version : $(ollama --version)"
