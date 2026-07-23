@@ -1,104 +1,155 @@
-import streamlit as st
 import requests
+import streamlit as st
 
-API_URL = "http://localhost:8000/chat"
+import config
 
-response = requests.post(
-    API_URL,
-    json={"prompt": prompt},
-    timeout=300
-)
+# -----------------------------------------------------
+# Page Configuration
+# -----------------------------------------------------
 
 st.set_page_config(
-    page_title="NextGen GenAI Student Lab",
-    page_icon="🤖",
-    layout="wide"
+    page_title=config.PAGE_TITLE,
+    page_icon=config.PAGE_ICON,
+    layout=config.LAYOUT,
 )
 
-st.title("🤖 NextGen GenAI Student Lab")
+# -----------------------------------------------------
+# Sidebar
+# -----------------------------------------------------
 
-menu = st.sidebar.radio(
+st.sidebar.title(config.APP_NAME)
+
+page = st.sidebar.radio(
     "Navigation",
-    ["🏠 Home", "💬 AI Chat", "ℹ️ System Status"]
+    [
+        "🏠 Home",
+        "💬 AI Chat",
+        "🩺 System Status",
+    ],
 )
 
-# -------------------------------------------------
+# -----------------------------------------------------
 # Home
-# -------------------------------------------------
-if menu == "🏠 Home":
+# -----------------------------------------------------
 
-    st.header("Welcome")
+if page == "🏠 Home":
 
-    st.write("""
-This is a beginner-friendly GenAI lab.
+    st.title(config.APP_NAME)
 
+    st.write(f"Version **{config.VERSION}**")
+
+    st.success("Welcome to the NextGen GenAI Student Lab.")
+
+    st.markdown("""
 ### Features
 
-- 💬 AI Chat
-- 📄 Chat with PDF (Coming Soon)
-- 🧠 Prompt Playground (Coming Soon)
-- 🤖 AI Agents (Coming Soon)
-- 🔐 AI Security Labs (Coming Soon)
+- Local AI Chat
+- Ollama Integration
+- FastAPI Backend
+- Streamlit UI
+- Beginner Friendly
 
-Built using:
+---
+Future Versions
 
-- Streamlit
-- FastAPI
-- Ollama
-- Llama 3.2
+- Prompt Playground
+- Chat History
+- Chat with PDF
+- RAG
+- AI Agents
+- MCP
 """)
 
-# -------------------------------------------------
+# -----------------------------------------------------
 # AI Chat
-# -------------------------------------------------
-elif menu == "💬 AI Chat":
+# -----------------------------------------------------
 
-    st.header("Chat with Local AI")
+elif page == "💬 AI Chat":
+
+    st.title("AI Chat")
 
     prompt = st.text_area(
-        "Ask anything",
-        height=180
+        "Enter your prompt",
+        height=180,
     )
 
-    if st.button("Send"):
+    if st.button("Generate Response"):
 
-        if prompt.strip() == "":
+        if not prompt.strip():
             st.warning("Please enter a prompt.")
+            st.stop()
 
-        else:
+        with st.spinner("Generating response..."):
 
-            with st.spinner("Generating response..."):
+            try:
 
                 response = requests.post(
-                    f"{API_URL}/chat",
-                    json={
-                        "prompt": prompt
-                    }
+                    config.CHAT_API,
+                    json={"prompt": prompt},
+                    timeout=180,
                 )
+
+                response.raise_for_status()
 
                 result = response.json()
 
-                st.subheader("Response")
+                if result["success"]:
 
-                st.write(result["response"])
+                    st.success("Response Generated")
 
-# -------------------------------------------------
+                    st.write(result["response"])
+
+                else:
+
+                    st.error(result["error"])
+
+            except requests.exceptions.ConnectionError:
+
+                st.error(
+                    "Unable to connect to Backend."
+                )
+
+            except requests.exceptions.Timeout:
+
+                st.error(
+                    "Request timed out."
+                )
+
+            except Exception as ex:
+
+                st.exception(ex)
+
+# -----------------------------------------------------
 # System Status
-# -------------------------------------------------
-elif menu == "ℹ️ System Status":
+# -----------------------------------------------------
 
-    st.header("System Status")
+elif page == "🩺 System Status":
 
-    try:
+    st.title("System Status")
 
-        status = requests.get(
-            f"{API_URL}/health"
-        ).json()
+    if st.button("Refresh"):
 
-        st.success("Backend Running")
+        try:
 
-        st.write(status)
+            response = requests.get(
+                config.HEALTH_API,
+                timeout=10,
+            )
 
-    except Exception:
+            response.raise_for_status()
 
-        st.error("Backend is not running.")
+            health = response.json()
+
+            st.json(health)
+
+            if health["ollama"]:
+
+                st.success("Ollama is running.")
+
+            else:
+
+                st.error("Ollama is not running.")
+
+        except Exception as ex:
+
+            st.exception(ex)
