@@ -1,18 +1,9 @@
-"""
-NextGen GenAI Student Lab
-FastAPI Backend
-Version: 0.1
-"""
-
-import logging
-
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
-from config import APP_NAME, VERSION
+from typing import Optional
+import logging
+import config
 from utils import (
-    create_directories,
     generate_response,
     get_system_health,
     list_models,
@@ -24,29 +15,18 @@ from utils import (
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(message)s",
+    format="%(asctime)s %(levelname)s %(message)s",
 )
 
 logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------
-# Initialize
+# FastAPI
 # ----------------------------------------------------
 
-create_directories()
-
 app = FastAPI(
-    title=APP_NAME,
-    version=VERSION,
-    description="NextGen GenAI Student Lab API",
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    title=config.APP_NAME,
+    version=config.VERSION,
 )
 
 # ----------------------------------------------------
@@ -57,63 +37,104 @@ class ChatRequest(BaseModel):
     prompt: str
 
 # ----------------------------------------------------
-# Routes
+# Root
 # ----------------------------------------------------
 
 @app.get("/")
-def home():
+def root():
     return {
-        "application": APP_NAME,
-        "version": VERSION,
-        "status": "Running",
+        "application": config.APP_NAME,
+        "version": config.VERSION,
+        "status": "running"
     }
 
+# ----------------------------------------------------
+# Health
+# ----------------------------------------------------
 
 @app.get("/health")
 def health():
-    return get_system_health()
 
+    try:
+        return get_system_health()
+
+    except Exception as ex:
+        logger.exception(ex)
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(ex)
+        )
+
+# ----------------------------------------------------
+# Installed Models
+# ----------------------------------------------------
 
 @app.get("/models")
 def models():
-    return {
-        "success": True,
-        "models": list_models(),
-    }
 
+    try:
+        return {
+            "success": True,
+            "models": list_models()
+        }
+
+    except Exception as ex:
+
+        logger.exception(ex)
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(ex)
+        )
+
+# ----------------------------------------------------
+# Chat
+# ----------------------------------------------------
 
 @app.post("/chat")
 def chat(request: ChatRequest):
-    """
-    Generate response using Ollama.
-    """
 
     prompt = request.prompt.strip()
 
     if not prompt:
         raise HTTPException(
             status_code=400,
-            detail="Prompt cannot be empty.",
+            detail="Prompt cannot be empty."
         )
 
-    logger.info("Prompt: %s", prompt)
+    logger.info("Prompt received")
 
     try:
 
         response = generate_response(prompt)
 
-        logger.info("Response generated successfully.")
-
         return {
             "success": True,
             "response": response,
+            "error": None
         }
 
     except Exception as ex:
 
-        logger.exception("Chat generation failed")
+        logger.exception(ex)
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(ex),
-        )
+        return {
+            "success": False,
+            "response": "",
+            "error": str(ex)
+        }
+
+# ----------------------------------------------------
+# Startup
+# ----------------------------------------------------
+
+@app.on_event("startup")
+def startup():
+
+    logger.info("----------------------------------------")
+    logger.info(config.APP_NAME)
+    logger.info("Version : %s", config.VERSION)
+    logger.info("Model   : %s", config.MODEL_NAME)
+    logger.info("Backend Started")
+    logger.info("----------------------------------------")
