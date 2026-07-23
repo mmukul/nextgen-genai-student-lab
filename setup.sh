@@ -22,7 +22,7 @@ pip3 install -r requirements.txt
 # Install Ollama if missing
 if ! command -v ollama >/dev/null 2>&1; then
     echo "Installing Ollama..."
-    curl --http1.1 -fsSL https://ollama.com/install.sh | sh
+    sudo wget -qO- https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tar.zst | sudo tar --zstd -xf - -C /usr/local
 fi
 
 echo
