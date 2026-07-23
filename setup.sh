@@ -1,86 +1,84 @@
-# --------------------------------------------------
-# Install Ollama
-# --------------------------------------------------
+#!/bin/bash
+set -euo pipefail
 
+MODEL="llama3.2:3b"
+
+echo "========================================="
+echo " NextGen GenAI Student Lab Setup"
+echo "========================================="
+echo
+
+# Install Python dependencies
+if command -v dnf >/dev/null 2>&1; then
+    sudo dnf install -y curl git python3 python3-pip zstd
+elif command -v apt >/dev/null 2>&1; then
+    sudo apt update
+    sudo apt install -y curl git python3 python3-pip zstd
+fi
+
+# Install Python packages
+pip3 install -r requirements.txt
+
+# Install Ollama if missing
 if ! command -v ollama >/dev/null 2>&1; then
-
-    echo
     echo "Installing Ollama..."
-
-    curl -L https://ollama.com/download/ollama-linux-amd64.tar.zst | tar --zstd -xvf -
-
+    curl --http1.1 -fsSL https://ollama.com/install.sh | sh
 fi
 
 echo
+echo "Ollama Version : $(ollama --version)"
+echo "OS             : $(grep PRETTY_NAME /etc/os-release | cut -d= -f2 | tr -d '"')"
+echo "Architecture   : $(uname -m)"
+echo
+
+# Stop existing instance
+pkill -f "ollama serve" >/dev/null 2>&1 || true
+sleep 2
+
+rm -f /tmp/ollama.log
+
 echo "Starting Ollama..."
+nohup ollama serve >/tmp/ollama.log 2>&1 &
+PID=$!
 
-# Start only if not already running
-if ! pgrep -x ollama >/dev/null; then
-    nohup ollama serve >/tmp/ollama.log 2>&1 &
-fi
+echo "Waiting for Ollama..."
+for i in {1..20}; do
 
-echo "Waiting for Ollama to start..."
+    if ! kill -0 "$PID" 2>/dev/null; then
+        echo
+        echo "ERROR: Ollama failed to start."
+        echo
+        cat /tmp/ollama.log
+        exit 1
+    fi
 
-for i in {1..30}; do
-    if curl -s http://localhost:11434/api/tags >/dev/null; then
-        echo "Ollama is ready."
+    if curl -fs http://localhost:11434/api/tags >/dev/null 2>&1; then
+        echo "Ollama started."
         break
     fi
-    sleep 2
+
+    sleep 1
 done
 
-# Final check
-if ! curl -s http://localhost:11434/api/tags >/dev/null; then
-    echo "ERROR: Ollama failed to start."
-    echo "Check the log:"
-    echo "  cat /tmp/ollama.log"
+if ! curl -fs http://localhost:11434/api/tags >/dev/null 2>&1; then
+    echo "ERROR: Ollama is not responding."
+    cat /tmp/ollama.log
     exit 1
 fi
 
 echo
-echo "Downloading AI model..."
+echo "Checking model..."
 
-ollama pull llama3.2:3b
-
-# --------------------------------------------------
-# Validate Installation
-# --------------------------------------------------
+if ! ollama list | grep -q "$MODEL"; then
+    echo "Downloading $MODEL ..."
+    ollama pull "$MODEL"
+fi
 
 echo
 echo "========================================="
-echo "Validating Installation..."
+echo "Setup Completed Successfully"
 echo "========================================="
-
-echo "Checking Python..."
-python3 --version
-
-echo "Checking Pip..."
-pip --version
-
-echo "Checking Ollama..."
-ollama --version
-
-echo "Checking Model..."
-
-if ollama list | grep -q "llama3.2:3b"; then
-    echo "✓ Model Installed"
-else
-    echo "✗ Model Missing"
-    exit 1
-fi
-
-echo "Checking Backend..."
-
-if curl -s http://localhost:8000/health >/dev/null; then
-    echo "✓ Backend Running"
-else
-    echo "✗ Backend Failed"
-fi
-
-echo "Checking Streamlit..."
-
-if curl -s http://localhost:8501 >/dev/null; then
-    echo "✓ Streamlit Running"
-else
-    echo "✗ Streamlit Failed"
-fi
+echo
+echo "Backend   : python backend.py"
+echo "Frontend  : streamlit run app.py"
+echo
