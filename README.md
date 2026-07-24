@@ -1,130 +1,159 @@
 # 🤖 NextGen GenAI Student Lab
 
-A lightweight, beginner-friendly GenAI learning platform that runs completely on your local machine using **Ollama**, **FastAPI**, and **Streamlit**.
+A beginner-friendly **Local GenAI Learning Platform** built using **Streamlit**, **FastAPI**, **Python**, and **Ollama**.
 
-The goal of this project is to provide an easy-to-install environment for students to learn Generative AI without requiring cloud APIs or GPU infrastructure.
+Run Large Language Models (LLMs) locally without any cloud API keys and learn how modern GenAI applications are built.
 
 ---
 
 # Features
 
-- Local AI Chat
-- FastAPI Backend
-- Streamlit Web Interface
-- Ollama Integration
-- One-click Installation
-- Automatic Model Download
-- Health Check API
-- Model Listing API
-- Easy Start / Stop Scripts
-- Lightweight Architecture
-- Linux Compatible
+* Local AI Chat using Ollama
+* FastAPI REST Backend
+* Streamlit Web UI
+* Beginner Friendly
+* No OpenAI API Key Required
+* Lightweight Architecture
+* Extensible for RAG, AI Agents and MCP
 
 ---
 
-# Technology Stack
+# Architecture
 
-| Component | Technology |
-|-----------|------------|
-| UI | Streamlit |
-| Backend | FastAPI |
-| AI Model | Ollama |
-| Default Model | llama3.2:3b |
-| Language | Python 3.11+ |
-| OS | Ubuntu / Debian / Rocky / Fedora |
-
----
-
-# Project Structure
-
+```text
+                    +------------------+
+                    |   Streamlit UI   |
+                    +------------------+
+                             |
+                             |
+                    REST API (HTTP)
+                             |
+                             v
+                    +------------------+
+                    |     FastAPI      |
+                    +------------------+
+                             |
+                             |
+                       Python Utils
+                             |
+                             v
+                    +------------------+
+                    |      Ollama      |
+                    +------------------+
+                             |
+                             |
+                        Local LLM
 ```
-genai-student-lab/
+
+---
+
+# Repository Structure
+
+```text
+nextgen-genai-student-lab/
+
 │
-├── setup.sh
-├── start.sh
-├── stop.sh
-├── update.sh
+├── app.py
+├── backend.py
+├── config.py
+├── utils.py
 │
 ├── requirements.txt
-├── .env.example
 ├── README.md
 ├── LICENSE
 ├── .gitignore
 │
-├── backend.py
-├── app.py
-├── config.py
-├── utils.py
-│
-├── logs/
-│   ├── install.log
-│   ├── backend.log
-│   ├── streamlit.log
-│   └── ollama.log
+├── setup.sh
+├── start.sh
+├── stop.sh
+├── restart.sh
+├── status.sh
+├── update.sh
 │
 ├── uploads/
 ├── documents/
 ├── prompts/
-└── models/
+├── models/
+├── logs/
 ```
 
 ---
 
 # Prerequisites
 
-- Python 3.11 or later
-- Git
-- Curl
-- Internet connection (first installation only)
+* Python 3.10+
+* Git
+* curl
+* wget
+* zstd
+* Linux (Rocky Linux, Ubuntu, Fedora, Debian)
+* Internet connection (first-time model download)
 
 ---
 
-# Installation
-
-Clone the repository.
+# Clone Repository
 
 ```bash
-git clone https://github.com/mmukul/nextgen-genai-student-lab.git
+git clone <repository-url>
 
 cd nextgen-genai-student-lab
 ```
 
-Make scripts executable.
+---
+
+# Install
+
+Run the setup script.
 
 ```bash
 chmod +x *.sh
-```
 
-Run installation.
-
-```bash
 ./setup.sh
 ```
 
-The installer performs the following tasks automatically:
+The setup script automatically:
 
-- Updates OS packages
-- Installs required dependencies
-- Creates Python virtual environment
-- Installs Python packages
-- Installs Ollama
-- Downloads the default AI model
-- Creates required folders
-- Opens firewall ports (if supported)
-- Starts the backend
-- Starts the Streamlit application
+* Installs required Linux packages
+* Installs Python dependencies
+* Downloads and installs Ollama
+* Starts Ollama
+* Verifies Ollama health
+* Downloads the default LLM (`llama3.2:3b`)
 
 ---
 
-# Starting the Application
+# Start Application
 
 ```bash
 ./start.sh
 ```
 
+The script starts:
+
+* Ollama
+* FastAPI
+* Streamlit
+
+Example output:
+
+```text
+=========================================
+ Services Started Successfully
+=========================================
+
+FastAPI
+Local : http://localhost:8000
+LAN   : http://192.168.1.25:8000
+Docs  : http://192.168.1.25:8000/docs
+
+Streamlit
+Local : http://localhost:8501
+LAN   : http://192.168.1.25:8501
+```
+
 ---
 
-# Stopping the Application
+# Stop Services
 
 ```bash
 ./stop.sh
@@ -132,7 +161,23 @@ The installer performs the following tasks automatically:
 
 ---
 
-# Updating the Application
+# Restart Services
+
+```bash
+./restart.sh
+```
+
+---
+
+# Check Service Status
+
+```bash
+./status.sh
+```
+
+---
+
+# Update Application
 
 ```bash
 ./update.sh
@@ -140,307 +185,279 @@ The installer performs the following tasks automatically:
 
 ---
 
-# Accessing the Application
+# Access the Application
 
-## Streamlit UI
+## Local Machine
 
-```
+Streamlit
+
+```text
 http://localhost:8501
-```
-
-## FastAPI Documentation
-
-```
-http://localhost:8000/docs
-```
-
-## Health Check
-
-```
-http://localhost:8000/health
-```
-
----
-
-# External Access
-
-Find your server IP address.
-
-```bash
-hostname -I
-```
-
-Example
-
-```
-192.168.1.100
-```
-
-Access from another machine.
-
-```
-http://192.168.1.100:8501
 ```
 
 FastAPI
 
+```text
+http://localhost:8000
 ```
-http://192.168.1.100:8000/docs
+
+Swagger API
+
+```text
+http://localhost:8000/docs
 ```
 
 ---
 
-# API Endpoints
+## Other Machines (LAN)
 
-## Home
+If your VM uses a **Bridged Adapter**, use the IP shown by `./start.sh`.
 
+Example:
+
+```text
+http://192.168.1.25:8501
 ```
-GET /
-```
-
-Returns application information.
 
 ---
+
+# REST APIs
 
 ## Health
 
-```
+```http
 GET /health
 ```
 
-Example response
+Example
 
 ```json
 {
-    "application": "NextGen GenAI Student Lab",
-    "version": "0.1",
-    "ollama": true,
-    "model": "llama3.2:3b"
+    "application":"NextGen GenAI Student Lab",
+    "version":"0.1.0",
+    "ollama":true,
+    "model":"llama3.2:3b"
 }
 ```
 
 ---
 
-## Models
+## Installed Models
 
-```
+```http
 GET /models
 ```
-
-Returns installed Ollama models.
 
 ---
 
 ## Chat
 
-```
+```http
 POST /chat
 ```
 
-Example request
+Request
 
 ```json
 {
-    "prompt": "Explain Kubernetes."
+    "prompt":"Explain DevSecOps"
 }
 ```
 
-Example response
+Response
 
 ```json
 {
-    "success": true,
-    "response": "Kubernetes is..."
+    "success":true,
+    "response":"..."
 }
 ```
 
 ---
 
-# Default AI Model
+# Configuration
 
-The installer automatically downloads
+Application settings are stored in
 
+```text
+config.py
 ```
+
+Important configuration values:
+
+* API_HOST
+* API_PORT
+* UI_HOST
+* UI_PORT
+* MODEL_NAME
+* OLLAMA_HOST
+* REQUEST_TIMEOUT
+
+---
+
+# Default Model
+
+```text
 llama3.2:3b
 ```
 
-You can install additional models.
+To use another model:
 
 ```bash
-ollama pull qwen3
+ollama pull qwen3:4b
 ```
 
-```bash
-ollama pull mistral
-```
-
-```bash
-ollama pull gemma3
-```
-
-List installed models.
-
-```bash
-ollama list
-```
+Update `MODEL_NAME` in `config.py` or set the `MODEL_NAME` environment variable.
 
 ---
 
 # Logs
 
-Application logs are stored in
+Ollama
 
-```
-logs/
+```bash
+tail -f /tmp/ollama.log
 ```
 
-Files
+Backend
 
+```bash
+tail -f /tmp/backend.log
 ```
-install.log
-backend.log
-streamlit.log
-ollama.log
+
+Streamlit
+
+```bash
+tail -f /tmp/streamlit.log
 ```
 
 ---
 
-# Environment Variables
+# Firewall (Rocky Linux)
 
-Create a `.env` file from `.env.example`.
+Allow external access:
 
-Example
-
+```bash
+sudo firewall-cmd --permanent --add-port=8000/tcp
+sudo firewall-cmd --permanent --add-port=8501/tcp
+sudo firewall-cmd --reload
 ```
-MODEL_NAME=llama3.2:3b
 
-OLLAMA_HOST=http://localhost:11434
+Verify:
 
-API_HOST=0.0.0.0
-
-API_PORT=8000
-
-UI_HOST=0.0.0.0
-
-UI_PORT=8501
+```bash
+sudo firewall-cmd --list-ports
 ```
 
 ---
 
 # Troubleshooting
 
-## Check Ollama
+## Ollama not running
 
 ```bash
-ollama list
+tail -f /tmp/ollama.log
+```
+
+Restart:
+
+```bash
+./restart.sh
 ```
 
 ---
 
-## Start Ollama
+## Backend not reachable
+
+Check backend log:
 
 ```bash
-ollama serve
+tail -f /tmp/backend.log
+```
+
+Verify:
+
+```text
+http://localhost:8000/health
 ```
 
 ---
 
-## Check Backend
+## Streamlit not opening
+
+Check:
 
 ```bash
-curl http://localhost:8000/health
+tail -f /tmp/streamlit.log
+```
+
+Verify:
+
+```text
+http://localhost:8501
 ```
 
 ---
 
-## Check Running Processes
+## Download interrupted
+
+Retry:
 
 ```bash
-ps -ef | grep streamlit
+./setup.sh
 ```
 
-```bash
-ps -ef | grep uvicorn
-```
+If required:
 
 ```bash
-ps -ef | grep ollama
+rm -f /tmp/ollama-linux-amd64.tar.zst
 ```
+
+Run setup again.
 
 ---
 
-## View Logs
+# Future Roadmap
 
-Backend
+Version 0.2
 
-```bash
-cat logs/backend.log
-```
+* Prompt Playground
+* Multiple Model Selection
+* Chat History
+* Markdown Rendering
 
-Streamlit
+Version 0.3
 
-```bash
-cat logs/streamlit.log
-```
+* Chat with PDF
+* RAG
+* ChromaDB
+* Vector Search
 
-Ollama
+Version 0.4
 
-```bash
-cat logs/ollama.log
-```
+* AI Agents
+* MCP
+* Function Calling
+* Tool Integration
 
----
+Version 1.0
 
-# Current Version
-
-## v0.1
-
-- AI Chat
-- FastAPI Backend
-- Streamlit UI
-- Ollama Integration
-- Health API
-- Model API
-- One-click Installer
+* Authentication
+* User Management
+* Model Manager
+* Training Labs
+* AI Security Labs
 
 ---
 
-# Roadmap
+# Technology Stack
 
-## v0.2
-
-- Dashboard
-- Better UI
-- Chat History
-
-## v0.3
-
-- Prompt Playground
-- Prompt Templates
-
-## v0.4
-
-- Model Manager
-
-## v0.5
-
-- Chat with PDF (RAG)
-
-## v0.6
-
-- AI Agents
-
-## v0.7
-
-- MCP Integration
-
-## v0.8
-
-- AI Security Labs
-
-## v1.0
-
-- Complete GenAI Student Learning Platform
+* Python
+* FastAPI
+* Streamlit
+* Ollama
+* Requests
+* Uvicorn
 
 ---
 
@@ -454,9 +471,6 @@ MIT License
 
 **Mukul Malhotra**
 
-DevOps | DevSecOps | GenAI | Application Security | Corporate Trainer
+Corporate Trainer | DevSecOps Architect | GenAI Consultant
 
----
-- 🤝 Contribute improvements
-
-Happy Learning! 🚀
+Happy Learning!
