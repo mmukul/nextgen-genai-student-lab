@@ -5,6 +5,7 @@
 echo
 echo "Installing Python packages..."
 
+yum install python3-pip -y 
 python3 -m pip install --upgrade pip setuptools wheel
 
 if [ -f requirements.txt ]; then
