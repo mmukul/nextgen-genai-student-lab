@@ -1,134 +1,107 @@
 #!/bin/bash
-
 set -euo pipefail
 
-BACKEND_PORT=8000
-STREAMLIT_PORT=8501
-OLLAMA_PORT=11434
+###############################################################################
+# NextGen GenAI Student Lab - start.sh
+###############################################################################
 
-echo "========================================="
-echo " NextGen GenAI Student Lab"
-echo " Starting Services"
-echo "========================================="
-echo
+APP_NAME="NextGen GenAI Student Lab"
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+LOG_DIR="$ROOT_DIR/logs"
+mkdir -p "$LOG_DIR"
 
-#----------------------------------------------------
-# Check Ollama
-#----------------------------------------------------
-
-if ! command -v ollama >/dev/null 2>&1; then
-    echo "❌ ERROR: Ollama is not installed."
-    echo "Run ./setup.sh first."
-    exit 1
+# Load environment
+if [ -f "$ROOT_DIR/.env" ]; then
+  set -a
+  . "$ROOT_DIR/.env"
+  set +a
 fi
 
-echo "Ollama Version : $(ollama --version)"
-echo
+BACKEND_PORT=${BACKEND_PORT:-8000}
+STREAMLIT_PORT=${STREAMLIT_PORT:-8501}
+OLLAMA_PORT=${OLLAMA_PORT:-11434}
+MODEL_NAME=${MODEL_NAME:-llama3.2:3b}
 
-#----------------------------------------------------
-# Start Ollama
-#----------------------------------------------------
+OLLAMA_LOG="$LOG_DIR/ollama.log"
+BACKEND_LOG="$LOG_DIR/backend.log"
+STREAMLIT_LOG="$LOG_DIR/streamlit.log"
 
-if curl -fs "http://localhost:${OLLAMA_PORT}/api/tags" >/dev/null 2>&1; then
-    echo "✅ Ollama is already running."
-else
-    echo "Starting Ollama..."
+GREEN='\033[0;32m'; RED='\033[0;31m'; BLUE='\033[0;34m'; NC='\033[0m'
+ok(){ echo -e "${GREEN}[OK] $1${NC}"; }
+info(){ echo -e "${BLUE}==> $1${NC}"; }
+err(){ echo -e "${RED}[ERROR] $1${NC}"; exit 1; }
 
-    rm -f /tmp/ollama.log
+echo "=================================================="
+echo " $APP_NAME"
+echo "=================================================="
 
-    nohup ollama serve >/tmp/ollama.log 2>&1 &
-    OLLAMA_PID=$!
+# Activate venv if present
+[ -d "$ROOT_DIR/.venv" ] && . "$ROOT_DIR/.venv/bin/activate"
 
-    echo -n "Waiting for Ollama"
-
-    for i in {1..20}; do
-
-        if ! kill -0 "$OLLAMA_PID" 2>/dev/null; then
-            echo
-            echo "❌ ERROR: Ollama crashed."
-            echo
-            echo "========== Ollama Log =========="
-            cat /tmp/ollama.log
-            echo "================================"
-            exit 1
-        fi
-
-        if curl -fs "http://localhost:${OLLAMA_PORT}/api/tags" >/dev/null 2>&1; then
-            echo
-            echo "✅ Ollama started."
-            break
-        fi
-
-        echo -n "."
-        sleep 1
-    done
-
-    if ! curl -fs "http://localhost:${OLLAMA_PORT}/api/tags" >/dev/null 2>&1; then
-        echo
-        echo "❌ ERROR: Ollama is not responding."
-        cat /tmp/ollama.log
-        exit 1
-    fi
-fi
-
-#----------------------------------------------------
-# Start Backend
-#----------------------------------------------------
-
-if lsof -Pi :${BACKEND_PORT} -sTCP:LISTEN -t >/dev/null ; then
-    echo "✅ Backend already running."
-else
-    echo "Starting Backend..."
-    nohup python3 backend.py >/tmp/backend.log 2>&1 &
-fi
-
-#----------------------------------------------------
-# Wait for Backend
-#----------------------------------------------------
-
-echo -n "Waiting for Backend"
-
-for i in {1..15}; do
-
-    if curl -fs "http://localhost:${BACKEND_PORT}/health" >/dev/null 2>&1; then
-        echo
-        echo "✅ Backend started."
-        break
-    fi
-
-    echo -n "."
-    sleep 1
+# Verify commands
+for c in python3 uvicorn streamlit ollama curl lsof; do
+ command -v "$c" >/dev/null 2>&1 || err "$c not installed. Run ./setup.sh"
 done
 
-#----------------------------------------------------
-# Start Streamlit
-#----------------------------------------------------
+# Verify files
+for f in app.py backend.py config.py utils.py; do
+ [ -f "$ROOT_DIR/$f" ] || err "Missing $f"
+done
 
-if lsof -Pi :${STREAMLIT_PORT} -sTCP:LISTEN -t >/dev/null ; then
-    echo "✅ Streamlit already running."
+IP=$(hostname -I 2>/dev/null|awk '{print $1}')
+[ -z "$IP" ] && IP=$(ip route get 1.1.1.1|awk '{print $7;exit}')
+
+wait_url(){
+ URL=$1; NAME=$2
+ for i in $(seq 1 60); do
+   if curl -fs "$URL" >/dev/null 2>&1; then ok "$NAME ready"; return; fi
+   sleep 2
+ done
+ err "$NAME failed"
+}
+
+info "Starting Ollama"
+if ! curl -fs http://127.0.0.1:${OLLAMA_PORT}/api/tags >/dev/null 2>&1; then
+ nohup ollama serve >"$OLLAMA_LOG" 2>&1 &
+ echo $! >"$LOG_DIR/ollama.pid"
+ wait_url http://127.0.0.1:${OLLAMA_PORT}/api/tags Ollama
 else
-    echo "Starting Streamlit..."
-    nohup streamlit run app.py >/tmp/streamlit.log 2>&1 &
+ ok "Ollama already running"
 fi
 
-sleep 5
+ollama list | awk '{print $1}' | grep -qx "$MODEL_NAME" || err "Model $MODEL_NAME not found. Run: ollama pull $MODEL_NAME"
 
-#----------------------------------------------------
-# Summary
-#----------------------------------------------------
+info "Starting FastAPI"
+if ! lsof -Pi :"$BACKEND_PORT" -sTCP:LISTEN -t >/dev/null; then
+ nohup python3 -m uvicorn backend:app --host 0.0.0.0 --port "$BACKEND_PORT" >"$BACKEND_LOG" 2>&1 &
+ echo $! >"$LOG_DIR/backend.pid"
+fi
+wait_url http://127.0.0.1:${BACKEND_PORT}/health FastAPI
+
+info "Starting Streamlit"
+if ! lsof -Pi :"$STREAMLIT_PORT" -sTCP:LISTEN -t >/dev/null; then
+ nohup streamlit run app.py --server.address 0.0.0.0 --server.port "$STREAMLIT_PORT" >"$STREAMLIT_LOG" 2>&1 &
+ echo $! >"$LOG_DIR/streamlit.pid"
+fi
+wait_url http://127.0.0.1:${STREAMLIT_PORT} Streamlit
 
 echo
-echo "========================================="
-echo " Services Started Successfully"
-echo "========================================="
+echo "==================== SUMMARY ===================="
+echo "Python     : $(python3 --version)"
+echo "Ollama     : $(ollama --version)"
+echo "Model      : $MODEL_NAME"
 echo
-echo "🤖 Ollama    : http://localhost:${OLLAMA_PORT}"
-echo "⚙️ Backend   : http://localhost:${BACKEND_PORT}"
-echo "🌐 Streamlit : http://localhost:${STREAMLIT_PORT}"
+echo "Ollama     : http://localhost:${OLLAMA_PORT}"
+echo "FastAPI    : http://localhost:${BACKEND_PORT}"
+echo "Docs       : http://${IP}:${BACKEND_PORT}/docs"
+echo "Streamlit  : http://${IP}:${STREAMLIT_PORT}"
 echo
-echo "Useful Commands"
-echo "---------------"
-echo "tail -f /tmp/ollama.log"
-echo "tail -f /tmp/backend.log"
-echo "tail -f /tmp/streamlit.log"
+echo "Logs:"
+echo "  $OLLAMA_LOG"
+echo "  $BACKEND_LOG"
+echo "  $STREAMLIT_LOG"
 echo
+echo "PID files:"
+echo "  $LOG_DIR/ollama.pid"
+echo "  $LOG_DIR/backend.pid"
+echo "  $LOG_DIR/streamlit.pid"
