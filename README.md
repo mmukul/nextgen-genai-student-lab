@@ -94,7 +94,7 @@ nextgen-genai-student-lab/
 # Clone Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/mmukul/nextgen-genai-student-lab.git
 
 cd nextgen-genai-student-lab
 ```
