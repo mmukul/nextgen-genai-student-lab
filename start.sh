@@ -51,6 +51,232 @@ done
 IP=$(hostname -I 2>/dev/null|awk '{print $1}')
 [ -z "$IP" ] && IP=$(ip route get 1.1.1.1|awk '{print $7;exit}')
 
+<<<<<<< HEAD
+
+warn(){
+    echo -e "\033[1;33m[WARN] $1${NC}"
+}
+
+wait_url() {
+
+    local URL="$1"
+    local NAME="$2"
+
+    info "Waiting for ${NAME}..."
+
+    for i in $(seq 1 60); do
+
+        if curl -fs "$URL" >/dev/null 2>&1; then
+            ok "${NAME} is ready"
+            return 0
+        fi
+
+        sleep 2
+    done
+
+    echo
+    err "${NAME} failed to start."
+}
+
+
+info "Checking Ollama..."
+
+if ! curl -fs "http://127.0.0.1:${OLLAMA_PORT}/api/tags" >/dev/null 2>&1; then
+
+    info "Starting Ollama..."
+
+    nohup ollama serve >"$OLLAMA_LOG" 2>&1 &
+
+    OLLAMA_PID=$!
+
+    echo "$OLLAMA_PID" > "$LOG_DIR/ollama.pid"
+
+    for i in $(seq 1 60); do
+
+        if ! kill -0 "$OLLAMA_PID" >/dev/null 2>&1; then
+
+            echo
+            cat "$OLLAMA_LOG"
+
+            err "Ollama crashed."
+
+        fi
+
+        if curl -fs "http://127.0.0.1:${OLLAMA_PORT}/api/tags" >/dev/null 2>&1; then
+            ok "Ollama started"
+            break
+        fi
+
+        sleep 2
+
+    done
+
+else
+
+    ok "Ollama already running"
+
+fi
+
+info "Checking model..."
+
+if ollama list | awk 'NR>1{print $1}' | grep -qx "$MODEL_NAME"; then
+
+    ok "$MODEL_NAME available"
+
+else
+
+    warn "$MODEL_NAME not found"
+
+    info "Downloading model..."
+
+    ollama pull "$MODEL_NAME"
+
+    ok "Model downloaded"
+
+fi
+
+info "Starting FastAPI"
+
+if ! lsof -Pi :"$BACKEND_PORT" -sTCP:LISTEN -t >/dev/null; then
+
+    nohup python3 -m uvicorn backend:app \
+        --host 0.0.0.0 \
+        --port "$BACKEND_PORT" \
+        >"$BACKEND_LOG" 2>&1 &
+
+    BACKEND_PID=$!
+
+    echo "$BACKEND_PID" > "$LOG_DIR/backend.pid"
+
+    sleep 2
+
+    if ! kill -0 "$BACKEND_PID" >/dev/null 2>&1; then
+
+        cat "$BACKEND_LOG"
+
+        err "FastAPI crashed."
+
+    fi
+
+else
+
+    ok "FastAPI already running"
+
+fi
+
+wait_url "http://127.0.0.1:${BACKEND_PORT}/health" "FastAPI"
+
+
+
+info "Starting Streamlit"
+
+if ! lsof -Pi :"$STREAMLIT_PORT" -sTCP:LISTEN -t >/dev/null; then
+
+    nohup streamlit run app.py \
+        --server.address 0.0.0.0 \
+        --server.port "$STREAMLIT_PORT" \
+        >"$STREAMLIT_LOG" 2>&1 &
+
+    STREAMLIT_PID=$!
+
+    echo "$STREAMLIT_PID" > "$LOG_DIR/streamlit.pid"
+
+    sleep 3
+
+    if ! kill -0 "$STREAMLIT_PID" >/dev/null 2>&1; then
+
+        cat "$STREAMLIT_LOG"
+
+        err "Streamlit crashed."
+
+    fi
+
+else
+
+    ok "Streamlit already running"
+
+fi
+
+wait_url "http://127.0.0.1:${STREAMLIT_PORT}" "Streamlit"
+
+
+echo
+echo "Firewall Ports"
+echo "------------------------------------------------------------"
+echo "Ollama      : ${OLLAMA_PORT}/tcp"
+echo "FastAPI     : ${BACKEND_PORT}/tcp"
+echo "Streamlit   : ${STREAMLIT_PORT}/tcp"
+
+#########################################################
+# Summary
+#########################################################
+
+echo
+echo "============================================================"
+echo "      NextGen GenAI Student Lab Started Successfully"
+echo "============================================================"
+echo
+
+echo "Application Information"
+echo "------------------------------------------------------------"
+echo "Application  : ${APP_NAME}"
+echo "Model        : ${MODEL_NAME}"
+echo "Python       : $(python3 --version)"
+echo "Ollama       : $(ollama --version)"
+echo
+
+echo "Services"
+echo "------------------------------------------------------------"
+echo "✓ Ollama     : Running"
+echo "✓ FastAPI    : Running"
+echo "✓ Streamlit  : Running"
+echo
+
+echo "Access URLs"
+echo "------------------------------------------------------------"
+echo "Ollama API"
+echo "  Local      : http://localhost:${OLLAMA_PORT}"
+echo
+
+echo "FastAPI"
+echo "  Local      : http://localhost:${BACKEND_PORT}"
+echo "  LAN        : http://${IP}:${BACKEND_PORT}"
+echo "  Swagger    : http://${IP}:${BACKEND_PORT}/docs"
+echo "  Health     : http://localhost:${BACKEND_PORT}/health"
+echo
+
+echo "Streamlit"
+echo "  Local      : http://localhost:${STREAMLIT_PORT}"
+echo "  LAN        : http://${IP}:${STREAMLIT_PORT}"
+echo
+
+echo "Log Files"
+echo "------------------------------------------------------------"
+echo "Ollama       : ${OLLAMA_LOG}"
+echo "FastAPI      : ${BACKEND_LOG}"
+echo "Streamlit    : ${STREAMLIT_LOG}"
+echo
+
+echo "PID Files"
+echo "------------------------------------------------------------"
+echo "Ollama       : ${LOG_DIR}/ollama.pid"
+echo "FastAPI      : ${LOG_DIR}/backend.pid"
+echo "Streamlit    : ${LOG_DIR}/streamlit.pid"
+echo
+
+echo "Useful Commands"
+echo "------------------------------------------------------------"
+echo "Stop Services      : ./stop.sh"
+echo "Restart Services   : ./restart.sh"
+echo "Service Status     : ./status.sh"
+echo "Update Components  : ./update.sh"
+echo
+
+echo "============================================================"
+echo " All services are up and running."
+echo " Happy Learning!"
+echo "============================================================"
+=======
 wait_url(){
  URL=$1; NAME=$2
  for i in $(seq 1 60); do
