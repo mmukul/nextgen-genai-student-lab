@@ -85,14 +85,10 @@ done
 # Install Ollama
 #########################################################
 
-if command -v ollama >/dev/null 2>&1; then
-    echo "✓ Ollama already installed"
-else
     echo "Installing Ollama..."
     curl -fsSL https://ollama.com/install.sh | sh
-fi
 
-ollama serve &
+ollama serve & 2>/dev/null
 
 #########################################################
 # Project Directories
@@ -129,15 +125,10 @@ echo "Configuring Firewall"
 echo "========================================="
 
         echo "Opening required ports..."
-        firewall-cmd --permanent --add-port=${STREAMLIT_PORT}/tcp
+        firewall-cmd --permanent --add-port=8501/tcp
         firewall-cmd --reload
         
 #########################################################
-# Summary
-#########################################################
-
-echo
-=======
 # Summary
 #########################################################
 
@@ -146,14 +137,10 @@ echo "=========================================="
 echo "Setup Completed Successfully"
 echo "=========================================="
 
-python3 --version
-pip --version
 ollama --version
 
 echo
 echo "Model configured : $MODEL_NAME"
-echo "Project folders  : Created"
 echo
 echo "Next Steps:"
-echo "  source .venv/bin/activate"
 echo "  ./start.sh"
