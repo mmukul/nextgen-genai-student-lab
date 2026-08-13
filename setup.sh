@@ -120,7 +120,6 @@ EOF
 fi
 
 #########################################################
-<<<<<<< HEAD
 # Configure Firewall
 #########################################################
 
@@ -130,9 +129,7 @@ echo "Configuring Firewall"
 echo "========================================="
 
         echo "Opening required ports..."
-
         firewall-cmd --permanent --add-port=${STREAMLIT_PORT}/tcp
-
         firewall-cmd --reload
 
 
@@ -146,7 +143,6 @@ echo
 #########################################################
 
 echo
->>>>>>> refs/remotes/origin/main
 echo "=========================================="
 echo "Setup Completed Successfully"
 echo "=========================================="
