@@ -92,8 +92,6 @@ else
     curl -fsSL https://ollama.com/install.sh | sh
 fi
 
-echo "Ollama Version: $(ollama --version)"
-
 #########################################################
 # Project Directories
 #########################################################
@@ -131,8 +129,7 @@ echo "========================================="
         echo "Opening required ports..."
         firewall-cmd --permanent --add-port=${STREAMLIT_PORT}/tcp
         firewall-cmd --reload
-
-
+        
 #########################################################
 # Summary
 #########################################################
